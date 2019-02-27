@@ -7,7 +7,8 @@ from typing import Dict, List, Tuple, Iterable, Any
 from itertools import islice
 from collections import namedtuple
 from datetime import datetime
-
+import sys
+import time
 
 parser = argparse.ArgumentParser()
 
@@ -73,12 +74,34 @@ def parse_data(soup: BeautifulSoup) -> Report:
 	egyszeru = [item.strip() for item in egyszeru if len(item.strip()) > 0]
 	return {"anyagok": parsed_tabla, "verdikt": egyszeru}
 
+def print_chart(value: float or str or int,
+				char_length: int = 20,
+				char: str = "#",
+				step_duration: float = 0.03) -> None:
+	if isinstance(value, str):
+		if "%" in value:
+			pass
+	else:
+		parsed_value = round(value, 0)
+	sys.stdout.write(str(round(parsed_value/char_length, 4) * 100) + "% [")
+	for n in range(parsed_value):
+		time.sleep(step_duration)
+		sys.stdout.write(char)
+		sys.stdout.flush()
+	for n in range(char_length - parsed_value):
+		time.sleep(step_duration)
+		sys.stdout.write(".")
+		sys.stdout.flush()
+	sys.stdout.write("]")
+
 def pretty_print_report(r: Report) -> None:
 	varos = " ".join(r['verdikt'][0].split()[:-3])
 	print(f"{varos} @", datetime.now().strftime("%Y.%m.%d %H:%M"))
 
 	for anyag in r['anyagok']:
-		printcolor(" ".join(anyag), Styles.OKBLUE)
+		printcolor(f"{anyag[0]} ({anyag[1]})", Styles.OKBLUE)
+		
 
 	for line in r['verdikt']:
 		printcolor(line, Styles.WARNING)
+
