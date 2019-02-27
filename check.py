@@ -3,8 +3,10 @@ import requests
 import random
 from bs4 import BeautifulSoup
 
-from typing import List, Tuple, Iterable
+from typing import Dict, List, Tuple, Iterable, Any
 from itertools import islice
+from collections import namedtuple
+from datetime import datetime
 
 
 parser = argparse.ArgumentParser()
@@ -17,6 +19,23 @@ parser.add_argument("-e", "--egyszeru",
 args = parser.parse_args()
 
 __SOURCE_URL__ = "http://legszennyezes.hu/%s"
+
+Color = namedtuple('Color', ['code'])
+Report = Dict[str, Iterable]
+
+class Styles:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+def printcolor(out: Any, style: str) -> None:
+	print(style + out + Styles.ENDC)
 
 def chunk(it: Iterable, size: int = 5) -> List[str]:
     it = iter(it)
@@ -37,7 +56,7 @@ def get_data(link: str) -> BeautifulSoup:
     soup = BeautifulSoup(req.content, "html5lib")
     return soup
 
-def parse_data(soup: BeautifulSoup) -> Tuple[List[List[str]], List[str]]:
+def parse_data(soup: BeautifulSoup) -> Report:
 	tabla = soup.find("div", {"id": "current-air"}).text.strip().split("\n")
 	tabla = [item.strip() for item in tabla if len(item.strip()) > 0]
 
@@ -46,9 +65,20 @@ def parse_data(soup: BeautifulSoup) -> Tuple[List[List[str]], List[str]]:
 	for anyag in iterator:
 		if len(anyag) > 0:
 			parsed_tabla.append(anyag)
+		else:
+			break
 
 	egyszeru = soup.find("div", {"class": "current-air-lower"}).text.strip().split("\n")
 	#egyszeru = list(filter(lambda x: len(x) > 0, map(str.strip, egyszeru)))
 	egyszeru = [item.strip() for item in egyszeru if len(item.strip()) > 0]
-	
-	return parsed_tabla, egyszeru
+	return {"anyagok": parsed_tabla, "verdikt": egyszeru}
+
+def pretty_print_report(r: Report) -> None:
+	varos = " ".join(r['verdikt'][0].split()[:-3])
+	print(f"{varos} @", datetime.now().strftime("%Y.%m.%d %H:%M"))
+
+	for anyag in r['anyagok']:
+		printcolor(" ".join(anyag), Styles.OKBLUE)
+
+	for line in r['verdikt']:
+		printcolor(line, Styles.WARNING)
