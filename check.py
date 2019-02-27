@@ -9,6 +9,7 @@ from collections import namedtuple
 from datetime import datetime
 import sys
 import time
+import re
 
 parser = argparse.ArgumentParser()
 
@@ -80,10 +81,11 @@ def print_chart(value: float or str or int,
 				step_duration: float = 0.03) -> None:
 	if isinstance(value, str):
 		if "%" in value:
-			pass
+			parsed_value = int(re.search(r"\d+", value).group()) / 100
+			parsed_value = int(parsed_value * char_length)
 	else:
 		parsed_value = round(value, 0)
-	sys.stdout.write(str(round(parsed_value/char_length, 4) * 100) + "% [")
+	sys.stdout.write(str(round(parsed_value/char_length, 4) * 100) + "% ")
 	for n in range(parsed_value):
 		time.sleep(step_duration)
 		sys.stdout.write(char)
@@ -92,16 +94,20 @@ def print_chart(value: float or str or int,
 		time.sleep(step_duration)
 		sys.stdout.write(".")
 		sys.stdout.flush()
-	sys.stdout.write("]")
+	sys.stdout.write("\n")
 
 def pretty_print_report(r: Report) -> None:
 	varos = " ".join(r['verdikt'][0].split()[:-3])
 	print(f"{varos} @", datetime.now().strftime("%Y.%m.%d %H:%M"))
 
 	for anyag in r['anyagok']:
-		printcolor(f"{anyag[0]} ({anyag[1]})", Styles.OKBLUE)
+		printcolor(f"{anyag[0]} ({anyag[1]})", Styles.WARNING)
+		print_chart(anyag[2], step_duration = 0.01)
 		
 
-	for line in r['verdikt']:
+	for line in r['verdikt'][:-1]:
 		printcolor(line, Styles.WARNING)
 
+if __name__ == "__main__":
+	report = parse_data(get_data(__SOURCE_URL__ % args.varos))
+	pretty_print_report(report)
