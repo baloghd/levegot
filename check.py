@@ -83,9 +83,13 @@ def print_chart(value: float or str or int,
 		if "%" in value:
 			parsed_value = int(re.search(r"\d+", value).group()) / 100
 			parsed_value = int(parsed_value * char_length)
+			show_value = value
 	else:
 		parsed_value = round(value, 0)
-	sys.stdout.write(str(round(parsed_value/char_length, 4) * 100) + "% ")
+		show_value = str(round(value/char_length), 2) + " % "
+
+	# sys.stdout.write(str(round(parsed_value/char_length, 4) * 100) + "% ")
+	sys.stdout.write(str.rjust(show_value, 6))
 	for n in range(parsed_value):
 		time.sleep(step_duration)
 		sys.stdout.write(char)
